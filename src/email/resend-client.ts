@@ -3,25 +3,39 @@ import { Resend } from "resend";
 
 @Injectable()
 export class ResendClient {
-    private logger : Logger;
     private resend: Resend;
 
     constructor(){
-        this.logger = new Logger("Resend Client")
         this.resend = new Resend(process.env.RESEND_API_KEY);
     }
 
-    async sendEmail(to: string, subject: string, html: string): Promise<any>{
+    async sendEmail(to: string, subject: string, html: string): Promise<{ code: number, success: boolean; message: string }>{
         try {
-            const response = await this.resend.emails.send({
-                from: 'jeremiasarriondo98@gmail.com',
+            const {data, error} = await this.resend.emails.send({
+                from: 'Acme <onboarding@resend.dev>',
                 to,
                 subject,
                 html
             })
-            return response;
+
+            if (error) {
+                return {
+                    code: error["statusCode"],
+                    success: false,
+                    message: error.message
+                }
+            }
+            return {
+                code: 200,
+                success: true,
+                message: data.id
+            };
         } catch (error) {
-            throw new Error(`Failed to send email: ${error.message}`)
+            return {
+                code: 500,
+                success: false,
+                message: `Failed to send email: ${error.message}`
+            }
         }
     }
 }
